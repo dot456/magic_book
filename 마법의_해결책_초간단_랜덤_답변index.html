@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>마법의 해결책</title>
+  <meta name="description" content="질문을 던지면 랜덤으로 답해줍니다." />
+  <style>
+    :root {
+      --bg: #0a0612;
+      --gold: #ffd700;
+      --gold-light: #ffe55c;
+      --purple: #8b5cf6;
+      --text: #f0e6ff;
+      --muted: #c4b5fd;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at center, #1a0b2e 0%, var(--bg) 100%);
+      color: var(--text);
+      font-family: "Pretendard", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      position: relative;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* 배경 별 효과 */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-image:
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent),
+        radial-gradient(1px 1px at 80% 10%, white, transparent),
+        radial-gradient(2px 2px at 90% 60%, white, transparent),
+        radial-gradient(1px 1px at 33% 80%, white, transparent);
+      background-size: 200% 200%;
+      animation: twinkle 8s ease-in-out infinite;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+
+    .app {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      position: relative;
+      z-index: 1;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 900;
+      text-align: center;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .tagline {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 32px;
+    }
+
+    /* 마법 서적 */
+    .magic-book {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      position: relative;
+      perspective: 2000px;
+      margin: 24px auto;
+    }
+
+    .book-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateY(0deg);
+      transition: transform 1.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+    }
+
+    .book-container.opening {
+      transform: rotateY(0deg);
+    }
+
+    .book-container.closing {
+      transform: rotateY(0deg);
+    }
+
+    .book-cover {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #4a1c40 0%, #2d1b4e 50%, #1a0d3d 100%);
+      border: 3px solid var(--gold);
+      border-radius: 8px;
+      box-shadow:
+        0 10px 60px rgba(255, 215, 0, 0.3),
+        inset 0 0 30px rgba(255, 215, 0, 0.1),
+        0 0 80px rgba(138, 43, 226, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transform-origin: left;
+      transform: rotateY(0deg);
+      transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+      backface-visibility: hidden;
+    }
+
+    .book-container.closing .book-cover {
+      transform: rotateY(0deg);
+    }
+
+    .book-container.opening .book-cover {
+      transform: rotateY(-165deg);
+    }
+
+    .book-symbol {
+      display: none;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @keyframes glow {
+      0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6)); }
+      50% { filter: drop-shadow(0 0 35px rgba(255, 215, 0, 1)); }
+    }
+
+    .book-title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow:
+        0 0 20px rgba(255, 215, 0, 0.8),
+        0 0 40px rgba(255, 215, 0, 0.6),
+        0 2px 10px rgba(0, 0, 0, 0.8);
+      letter-spacing: 0.15em;
+      animation: float 3s ease-in-out infinite, glow 2s ease-in-out infinite;
+    }
+
+    .book-pages {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, #f4e8d0 0%, #faf5e8 50%, #f4e8d0 100%);
+      border-radius: 8px;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .book-container.closing .book-pages {
+      opacity: 0;
+    }
+
+    .book-container.opening .book-pages {
+      opacity: 1;
+    }
+
+    .answer-content {
+      font-size: 1.5rem;
+      line-height: 1.8;
+      color: #3d2314;
+      text-align: center;
+      font-weight: 600;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.6s ease 1s;
+    }
+
+    .book-container.opening .answer-content {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .book-container.closing .answer-content {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s ease;
+    }
+
+    /* 입력 영역 */
+    .input-area {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: 2px solid rgba(255, 215, 0, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      font-size: 1.1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    .btn {
+      width: 100%;
+      cursor: pointer;
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      font-weight: 900;
+      font-size: 1.2rem;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #1a0d3d;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+      letter-spacing: 0.05em;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(255, 215, 0, 0.6);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    /* 반짝이는 파티클 효과 */
+    .sparkle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: radial-gradient(circle, var(--gold), transparent);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: sparkle-burst 1s ease-out forwards;
+    }
+
+    @keyframes sparkle-burst {
+      0% {
+        transform: translate(0, 0) scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(1);
+        opacity: 0;
+      }
+    }
+
+    /* 반응형 디자인 */
+    /* 큰 화면 최적화 */
+    @media (min-width: 1200px) {
+      .app {
+        max-width: 1000px;
+      }
+      .magic-book {
+        max-width: 700px;
+        height: 450px;
+      }
+      .book-pages {
+        padding: 50px;
+      }
+      .answer-content {
+        font-size: 1.8rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 24px 16px;
+      }
+      .app {
+        gap: 20px;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+      .tagline {
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+      }
+      .magic-book {
+        height: 300px;
+        max-width: 100%;
+      }
+      .book-symbol {
+        font-size: 3.5rem;
+      }
+      .book-title {
+        font-size: 1.2rem;
+      }
+      .answer-content {
+        font-size: 1.1rem;
+        padding: 20px;
+      }
+      .book-pages {
+        padding: 30px 20px;
+      }
+      .input-area {
+        padding: 20px;
+      }
+      input[type="text"] {
+        font-size: 1rem;
+        padding: 14px;
+      }
+      .btn {
+        font-size: 1rem;
+        padding: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 20px 12px;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .magic-book {
+        height: 250px;
+      }
+      .book-symbol {
+        font-size: 3rem;
+      }
+      .book-title {
+        font-size: 1rem;
+      }
+      .answer-content {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>✨ 마법의 해결책 ✨</h1>
+    <p class="tagline">신성한 마법 서적에 질문을 던지고 운명의 답을 받으세요</p>
+
+    <div class="magic-book">
+      <div class="book-container" id="book">
+        <div class="book-cover">
+          <div class="book-title">마법의 해결책</div>
+        </div>
+        <div class="book-pages">
+          <div class="answer-content" id="answer"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <input id="question" type="text" placeholder="당신의 고민을 입력하세요..." />
+      <button class="btn" id="btn-ask">✨ 점지 받기 ✨</button>
+    </div>
+  </div>
+
+  <script>
+  
+    const DEFAULT_ANSWERS = [
+  "할 수 있다",
+  "불가능",
+  "포기하지 마라",
+  "당장 그만둘 것",
+  "지켜볼 것",
+  "지금은 때가 아니다",
+  "오늘은 쉬어라",
+  "다시 시도해라",
+  "계속 진행",
+  "멈춰야 한다",
+  "기다려라",
+  "더 준비해라",
+  "충분하다",
+  "지금 당장 시작",
+  "계획을 수정하라",
+  "다른 방법을 찾아라",
+  "누군가에게 물어라",
+  "결정 보류",
+  "지금이 기회",
+  "뒤로 한 걸음",
+  "마음이 이끄는 대로",
+  "논리적으로 판단하라",
+  "감에 따라가라",
+  "시간 낭비",
+  "성공할 것이다",
+  "실패해도 괜찮다",
+  "다음 번에 하라",
+  "그만 생각하라",
+  "조용히 실행하라",
+  "포기하지 말고 버텨라",
+  "다시 생각해라",
+  "그건 아니다",
+  "지금 당장 해라",
+  "멈추지 마라",
+  "지금은 위험하다",
+  "기회는 곧 온다",
+  "지금이 마지막이다",
+  "선택을 미뤄라",
+  "지금 결단하라",
+  "그만 고민해라",
+  "아무것도 하지 마라",
+  "직감대로 해라",
+  "상대의 뜻을 따르라",
+  "상황을 지켜보라",
+  "변화를 두려워 말라",
+  "끝까지 밀어붙여라",
+  "이건 놓아라",
+  "계속 기다려라",
+  "확신이 생길 때까지",
+  "무조건 간다",
+  "지금은 손을 떼라",
+  "당분간 멈춰라",
+  "조용히 준비하라",
+  "결과를 받아들여라",
+  "주저하지 마라",
+  "다시 처음부터",
+  "놓치지 마라",
+  "시작하지 마라",
+  "끝까지 버텨라",
+  "하루만 미뤄라",
+  "오늘은 하지 마라",
+  "즉시 처리하라",
+  "생각보다 간단하다",
+  "그건 이미 끝났다",
+  "그냥 해라",
+  "잠시 멈춰라",
+  "시간이 해결한다",
+  "즉시 행동하라",
+  "그만두어도 된다",
+  "일단 멈춰라",
+  "충동은 피하라",
+  "한 번 더 시도하라",
+  "지금은 휴식",
+  "천천히 가라",
+  "조심하라",
+  "모험하라",
+  "놓아주어라"
+];
+
+
+  
+
+    const elQ = document.getElementById('question');
+    const elA = document.getElementById('answer');
+    const elBtnAsk = document.getElementById('btn-ask');
+    const elBook = document.getElementById('book');
+    const magicBook = document.querySelector('.magic-book');
+
+    let isAnimating = false;
+
+    // 반짝이는 파티클 생성
+    function createSparkles() {
+      const bookRect = magicBook.getBoundingClientRect();
+      const centerX = bookRect.width / 2;
+      const centerY = bookRect.height / 2;
+
+      for (let i = 0; i < 20; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+
+        const angle = (Math.PI * 2 * i) / 20;
+        const distance = 100 + Math.random() * 100;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+
+        sparkle.style.left = centerX + 'px';
+        sparkle.style.top = centerY + 'px';
+        sparkle.style.setProperty('--tx', tx + 'px');
+        sparkle.style.setProperty('--ty', ty + 'px');
+
+        magicBook.appendChild(sparkle);
+
+        setTimeout(() => sparkle.remove(), 1000);
+      }
+    }
+
+    function showAnswer() {
+      if (isAnimating) return;
+      isAnimating = true;
+
+      const randomAnswer = DEFAULT_ANSWERS[Math.floor(Math.random() * DEFAULT_ANSWERS.length)];
+
+      // 책 닫기 - opening 제거하고 closing 추가
+      elBook.classList.remove('opening');
+      elBook.classList.add('closing');
+
+      setTimeout(() => {
+        // 답변 설정
+        elA.textContent = randomAnswer;
+
+        // closing 제거하고 잠시 대기
+        elBook.classList.remove('closing');
+
+        setTimeout(() => {
+          // 반짝이는 효과
+          createSparkles();
+
+          // 책 열기
+          elBook.classList.add('opening');
+
+          setTimeout(() => {
+            isAnimating = false;
+          }, 1500);
+        }, 100);
+      }, 600);
+    }
+
+    elBtnAsk.addEventListener('click', showAnswer);
+    elQ.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') showAnswer();
+    });
+  </script>
+</body>
+</html>
