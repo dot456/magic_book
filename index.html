@@ -560,7 +560,15 @@
         }, 100);
       }, 600);
     }
-
+    
+    // GA4 버튼 클릭 추적 코드
+    elBtnAsk.addEventListener('click', function() {
+      gtag('event', 'click_ask_button', {
+        'event_category': 'user_action',
+        'event_label': '점지받기 버튼'
+      });
+    });
+    
     elBtnAsk.addEventListener('click', showAnswer);
     elQ.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') showAnswer();
